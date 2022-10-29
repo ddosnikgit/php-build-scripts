@@ -10,7 +10,7 @@ LIBXML_VERSION="2.10.2"
 LIBPNG_VERSION="1.6.38"
 LIBFFI_VERSION="3.4.4"
 LIBJPEG_VERSION="9e"
-OPENSSL_VERSION="1.1.1r"
+OPENSSL_VERSION="1.1.1p"
 LIBZIP_VERSION="1.9.2"
 SQLITE3_YEAR="2022"
 SQLITE3_VERSION="3390400" #3.39.4
@@ -610,8 +610,8 @@ function build_leveldb {
 
 function build_libffi {
 	if [[ "$COMPILE_TARGET" == "mac-x86-64" ]]; then
-		echo "[warning] macOS breaks when building libffi version 3.4.4, version set to 3.4.3"
-		LIBFFI_VERSION="3.4.3"
+		echo "[warning] macOS (apple m1) breaks when building libffi"
+		return 1
 	fi
 	echo -n "[libffi] downloading $LIBFFI_VERSION..."
 	download_file "https://github.com/libffi/libffi/releases/download/v$LIBFFI_VERSION/libffi-$LIBFFI_VERSION.tar.gz" | tar -zx >> "$DIR/install.log" 2>&1
