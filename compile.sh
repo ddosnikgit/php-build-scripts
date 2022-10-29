@@ -611,7 +611,7 @@ function build_leveldb {
 function build_libffi {
 	if [[ "$COMPILE_TARGET" == "mac-x86-64" ]]; then
 		echo "[warning] macOS (apple m1) breaks when building libffi"
-		return 1
+		return 0
 	fi
 	echo -n "[libffi] downloading $LIBFFI_VERSION..."
 	download_file "https://github.com/libffi/libffi/releases/download/v$LIBFFI_VERSION/libffi-$LIBFFI_VERSION.tar.gz" | tar -zx >> "$DIR/install.log" 2>&1
