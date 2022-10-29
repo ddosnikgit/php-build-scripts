@@ -411,6 +411,10 @@ function build_zlib {
 		local EXTRA_FLAGS="--shared"
 	fi
 
+	if [[ "$COMPILE_TARGET" == "mac-x86-64" ]]; then
+		ZLIB_VERSION="1.2.11" #1.2.13 breaks on macOS and probably cross-compile too due to ignoring $CC
+	fi
+
 	#zlib
 	echo -n "[zlib] downloading $ZLIB_VERSION..."
 	download_file "https://github.com/madler/zlib/archive/v$ZLIB_VERSION.tar.gz" | tar -zx >> "$DIR/install.log" 2>&1
