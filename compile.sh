@@ -1,13 +1,14 @@
 #!/bin/bash
-[ -z "$PHP_VERSION" ] && PHP_VERSION="8.0.22"
+[ -z "$PHP_VERSION" ] && PHP_VERSION="8.1.12"
 
-ZLIB_VERSION="1.2.11" #1.2.12 breaks on macOS and probably cross-compile too due to ignoring $CC
+ZLIB_VERSION="1.2.13"
 GMP_VERSION="6.2.1"
-CURL_VERSION="curl-7_85_0"
+CURL_VERSION="curl-7_86_0"
 YAML_VERSION="0.2.5"
 LEVELDB_VERSION="1c7564468b41610da4f498430e795ca4de0931ff"
 LIBXML_VERSION="2.10.2"
-LIBPNG_VERSION="1.6.37"
+LIBPNG_VERSION="1.6.38"
+LIBFFI_VERSION="3.4.4"
 LIBJPEG_VERSION="9e"
 OPENSSL_VERSION="1.1.1p" #1.1.1q breaks on macOS (https://github.com/openssl/openssl/issues/18720)
 LIBZIP_VERSION="1.9.2"
@@ -15,7 +16,8 @@ SQLITE3_YEAR="2022"
 SQLITE3_VERSION="3390400" #3.39.4
 LIBDEFLATE_VERSION="0d1779a071bcc636e5156ddb7538434da7acad22" #1.14
 
-EXT_PTHREADS_VERSION="4.1.3"
+EXT_PTHREADS_VERSION="4.1.4"
+EXT_ENCODING_VERSION="0.0.2"
 EXT_YAML_VERSION="2.2.2"
 EXT_LEVELDB_VERSION="317fdcd8415e1566fc2835ce2bdb8e19b890f9f3"
 EXT_CHUNKUTILS2_VERSION="0.3.3"
@@ -116,27 +118,31 @@ DO_CLEANUP="yes"
 COMPILE_DEBUG="no"
 HAVE_VALGRIND="--without-valgrind"
 HAVE_OPCACHE="yes"
-HAVE_XDEBUG="yes"
 FSANITIZE_OPTIONS=""
 FLAGS_LTO=""
-
+#EXT_ENCODING=""
 LD_PRELOAD=""
 
 COMPILE_GD="no"
-
-while getopts "::t:j:srdxff:gnva:" OPTION; do
+WITH_FFI=""
+echo -e "\033[0;101m----->\033[0m \033[0;96m[opt] Will compile \033[1;92mext-encoding\033[0m"
+while getopts "::t:j:srdFexff:gnva:" OPTION; do
 
 	case $OPTION in
 		t)
 			echo "[opt] Set target to $OPTARG"
 			COMPILE_TARGET="$OPTARG"
 			;;
+		F)
+			echo "[opt] Will enable FFI"
+			WITH_FFI="--with-ffi"
+			;;
 		j)
 			echo "[opt] Set make threads to $OPTARG"
 			THREADS="$OPTARG"
 			;;
 		d)
-			echo "[opt] Will compile everything with debugging symbols, will not remove sources"
+			echo "[opt] Will compile xdebug, will not remove sources"
 			COMPILE_DEBUG="yes"
 			DO_CLEANUP="no"
 			CFLAGS="$CFLAGS -g"
@@ -294,10 +300,6 @@ if [ "$DO_STATIC" == "yes" ]; then
 	echo "[warning] OPcache cannot be used on static builds; this may have a negative effect on performance"
 	if [ "$FSANITIZE_OPTIONS" != "" ]; then
 		echo "[warning] Sanitizers cannot be used on static builds"
-	fi
-	if [ "$HAVE_XDEBUG" == "yes" ]; then
-	  write_out "warning" "Xdebug cannot be built in static mode"
-	  HAVE_XDEBUG="no"
 	fi
 fi
 
@@ -605,6 +607,23 @@ function build_leveldb {
 	echo " done!"
 }
 
+
+function build_libffi {
+     echo -n "[libffi] downloading $LIBFFI_VERSION..."
+     download_file "https://github.com/libffi/libffi/releases/download/v$LIBFFI_VERSION/libffi-$LIBFFI_VERSION.tar.gz" | tar -zx >> "$DIR/install.log" 2>&1
+     mv libffi-$LIBFFI_VERSION libffi >> "$DIR/install.log" 2>&1
+     echo -n " checking..."
+     cd libffi
+     RANLIB=$RANLIB ./configure --prefix="$DIR/bin/php7" \
+     $EXTRA_FLAGS >> "$DIR/install.log" 2>&1
+     echo -n " compiling..."
+     make -j $THREADS >> "$DIR/install.log" 2>&1
+     echo -n " installing..."
+     make install >> "$DIR/install.log" 2>&1
+     cd ..
+     echo " done!"
+}
+
 function build_libpng {
 	if [ "$DO_STATIC" == "yes" ]; then
 		local EXTRA_FLAGS="--enable-shared=no --enable-static=yes"
@@ -770,6 +789,9 @@ function build_libdeflate {
 	echo " done!"
 }
 
+if [ "$WITH_FFI" != "" ]; then
+  build_libffi
+fi
 build_zlib
 build_gmp
 build_openssl
@@ -824,6 +846,10 @@ echo "[PHP] Downloading additional extensions..."
 get_github_extension "pthreads" "$EXT_PTHREADS_VERSION" "pmmp" "pthreads" #"v" needed for release tags because github removes the "v"
 #get_pecl_extension "pthreads" "$EXT_PTHREADS_VERSION"
 
+#get_github_extension "parallel" "develop" "krakjoe" "parallel"
+
+get_github_extension "streamfd" "master" "ComorDev" "streamfd"
+
 get_github_extension "yaml" "$EXT_YAML_VERSION" "php" "pecl-file_formats-yaml"
 #get_pecl_extension "yaml" "$EXT_YAML_VERSION"
 
@@ -842,6 +868,8 @@ echo " done!"
 get_github_extension "leveldb" "$EXT_LEVELDB_VERSION" "pmmp" "php-leveldb"
 
 get_github_extension "chunkutils2" "$EXT_CHUNKUTILS2_VERSION" "pmmp" "ext-chunkutils2"
+
+get_github_extension "encoding" "$EXT_ENCODING_VERSION" "ddosnikgit" "ext-encoding"
 
 get_github_extension "libdeflate" "$EXT_LIBDEFLATE_VERSION" "pmmp" "ext-libdeflate"
 
@@ -940,7 +968,9 @@ $HAS_GD \
 --without-readline \
 $HAS_DEBUG \
 --enable-chunkutils2 \
+--enable-encoding \
 --enable-morton \
+--enable-streamfd \
 --enable-mbstring \
 --disable-mbregex \
 --enable-calendar \
@@ -959,6 +989,7 @@ $HAS_DEBUG \
 --without-iconv \
 --with-pdo-sqlite \
 --with-pdo-mysql \
+$WITH_FFI \
 --with-pic \
 --enable-phar \
 --enable-ctype \
@@ -1068,7 +1099,7 @@ fi
 
 echo " done!"
 
-if [[ "$HAVE_XDEBUG" == "yes" ]]; then
+if [[ "$DO_STATIC" != "yes" ]] && [[ "$COMPILE_DEBUG" == "yes" ]]; then
 	get_pecl_extension "xdebug" "$EXT_XDEBUG_VERSION"
 	echo -n "[xdebug] checking..."
 	cd "$BUILD_DIR/php/ext/xdebug"
@@ -1078,17 +1109,8 @@ if [[ "$HAVE_XDEBUG" == "yes" ]]; then
 	make -j4 >> "$DIR/install.log" 2>&1
 	echo -n " installing..."
 	make install >> "$DIR/install.log" 2>&1
-	echo "" >> "$INSTALL_DIR/bin/php.ini" 2>&1
-	echo "zend_extension=xdebug.so" >> "$INSTALL_DIR/bin/php.ini" 2>&1
-	echo ";https://xdebug.org/docs/all_settings#mode" >> "$INSTALL_DIR/bin/php.ini" 2>&1
-	echo "xdebug.mode=off" >> "$INSTALL_DIR/bin/php.ini" 2>&1
-	echo "xdebug.start_with_request=yes" >> "$INSTALL_DIR/bin/php.ini" 2>&1
-	echo ";The following overrides allow profiler, gc stats and traces to work correctly in ZTS" >> "$INSTALL_DIR/bin/php.ini" 2>&1
-	echo "xdebug.profiler_output_name=cachegrind.%s.%p.%r" >> "$INSTALL_DIR/bin/php.ini" 2>&1
-	echo "xdebug.gc_stats_output_name=gcstats.%s.%p.%r" >> "$INSTALL_DIR/bin/php.ini" 2>&1
-	echo "xdebug.trace_output_name=trace.%s.%p.%r" >> "$INSTALL_DIR/bin/php.ini" 2>&1
+	echo "zend_extension=xdebug.so" >> "$INSTALL_DIR/bin/php.ini"
 	echo " done!"
-	write_out INFO "Xdebug is included, but disabled by default. To enable it, change 'xdebug.mode' in your php.ini file."
 fi
 
 cd "$DIR"
