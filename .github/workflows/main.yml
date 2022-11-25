@@ -51,51 +51,6 @@ jobs:
           path: |
             workspace.tar.gz
           if-no-files-found: error
-
-  macos:
-    name: MacOS
-    runs-on: macos-11.0
-    
-    steps:
-      - uses: actions/checkout@v2
-      
-      - name: Install tools and dependencies
-        run: brew install libtool autoconf automake pkg-config bison re2c
-        
-      - name: Compile PHP
-        run: |
-          export PATH="/usr/local/opt/bison/bin:$PATH"
-          set -ex
-          trap "exit 1" ERR
-          ./compile.sh -t mac-x86-64 -Fnsfg -j4
-          
-      - name: Create tarball
-        run: tar -czf ./PHP_MacOS-x86_64.tar.gz bin
-        
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v2
-        if: always()
-        with:
-          name: MacOS
-          path: |
-            ./PHP_MacOS-x86_64.tar.gz
-            install.log
-            compile.sh
-          if-no-files-found: error
-
-      - name: Prepare workspace for upload
-        if: failure()
-        run: tar -czf workspace.tar.gz install_data
-
-      - name: Upload workspace
-        uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: MacOS-workspace
-          path: |
-            workspace.tar.gz
-          if-no-files-found: error
-
   windows:
     name: Windows
     runs-on: windows-2019
