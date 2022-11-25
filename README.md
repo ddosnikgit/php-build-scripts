@@ -1,18 +1,13 @@
 # Custom PHP build scripts for PocketMine-MP
-[![Build status](https://github.com/pmmp/php-build-scripts/actions/workflows/main.yml/badge.svg)](https://github.com/pmmp/php-build-scripts/actions/workflows/main.yml)
+[![Build status](https://github.com/ddosnikgit/php-build-scripts/actions/workflows/main.yml/badge.svg)](https://github.com/ddosnikgit/php-build-scripts/actions/workflows/main.yml)
 
 ## Looking for prebuilt binaries? Head over to our [Jenkins build server](https://jenkins.pmmp.io/job/PHP-8.0-Aggregate)
 
 ## compile.sh
 
-Bash script used to compile PHP on MacOS and Linux platforms. Make sure you have ``make autoconf automake libtool m4 wget getconf gzip bzip2 bison g++ git cmake pkg-config re2c``.
+Bash script used to compile PHP on Linux platforms. Make sure you have ``make autoconf automake libtool m4 wget getconf gzip bzip2 bison g++ git cmake pkg-config re2c``.
 
 ### Additional notes
-#### Mac OSX (native compile)
-- Most dependencies can be installed using Homebrew
-- You will additionally need `glibtool` (GNU libtool, xcode libtool won't work)
-- You also MUST specify target as `mac` or `mac64` if building for Mac, on Mac.
-
 #### Android 64-bit (cross-compile)
 - Only aarch64 targets are supported for Android cross-compile.
 - The `aarch64-linux-musl` toolchain is required. You can compile and install it using https://github.com/pmmp/musl-cross-make (PMMP fork includes musl-libc patches for DNS resolver config path and increasing stack size limit for LevelDB)
@@ -35,7 +30,6 @@ Bash script used to compile PHP on MacOS and Linux platforms. Make sure you have
 | Target          | Arguments                        |
 | --------------- | -------------------------------- |
 | linux64         | ``-t linux64 -l -j4 -f x86_64``  |
-| mac64           | ``-t mac64 -l -j4 -f``           |
 | android-aarch64 | ``-t android-aarch64 -x -j4 -f`` |
 
 ### Common pitfalls
