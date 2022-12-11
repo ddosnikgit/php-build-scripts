@@ -1,5 +1,5 @@
 #!/bin/bash
-[ -z "$PHP_VERSION" ] && PHP_VERSION="8.2.0"
+[ -z "$PHP_VERSION" ] && PHP_VERSION="8.1.13"
 
 ZLIB_VERSION="1.2.13"
 GMP_VERSION="6.2.1"
@@ -24,6 +24,7 @@ EXT_CHUNKUTILS2_VERSION="0.3.3"
 EXT_XDEBUG_VERSION="3.1.5"
 EXT_IGBINARY_VERSION="3.2.7"
 EXT_CRYPTO_VERSION="0.3.2"
+EXT_LZ4_VERSION="0.4.4"
 EXT_RECURSIONGUARD_VERSION="0.1.0"
 EXT_LIBDEFLATE_VERSION="0.1.0"
 EXT_MORTON_VERSION="0.1.2"
@@ -877,6 +878,8 @@ get_github_extension "leveldb" "$EXT_LEVELDB_VERSION" "pmmp" "php-leveldb"
 
 get_github_extension "chunkutils2" "$EXT_CHUNKUTILS2_VERSION" "pmmp" "ext-chunkutils2"
 
+get_github_extension "lz4" "$EXT_LZ4_VERSION" "ddosnikgit" "php-ext-lz4"
+
 get_github_extension "encoding" "$EXT_ENCODING_VERSION" "ddosnikgit" "ext-encoding"
 
 get_github_extension "libdeflate" "$EXT_LIBDEFLATE_VERSION" "pmmp" "ext-libdeflate"
@@ -977,6 +980,7 @@ $HAS_GD \
 $HAS_DEBUG \
 --enable-chunkutils2 \
 --enable-encoding \
+--enable-lz4 \
 --enable-morton \
 --enable-streamfd \
 --enable-mbstring \
